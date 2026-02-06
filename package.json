@@ -1,6 +1,9 @@
 {
   "name": "crm-core",
   "private": true,
+  "devDependencies": {
+    "next": "16.1.6"
+  },
   "workspaces": [
     "apps/api",
     "packages/shared"

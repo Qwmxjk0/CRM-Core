@@ -1,20 +1,32 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { env } from "./env";
+import { getEnv } from "./env";
 
-export const supabaseAdmin = createClient(
-  env.supabaseUrl,
-  env.supabaseServiceRoleKey,
-  {
-    auth: { persistSession: false, autoRefreshToken: false },
+let adminClient: SupabaseClient | null = null;
+let anonClient: SupabaseClient | null = null;
+
+export const getSupabaseAdmin = (): SupabaseClient => {
+  if (!adminClient) {
+    const env = getEnv();
+    adminClient = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
-);
+  return adminClient;
+};
 
-export const supabaseAnon = createClient(env.supabaseUrl, env.supabaseAnonKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+export const getSupabaseAnon = (): SupabaseClient => {
+  if (!anonClient) {
+    const env = getEnv();
+    anonClient = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return anonClient;
+};
 
-export const supabaseWithAuth = (accessToken: string): SupabaseClient =>
-  createClient(env.supabaseUrl, env.supabaseAnonKey, {
+export const supabaseWithAuth = (accessToken: string): SupabaseClient => {
+  const env = getEnv();
+  return createClient(env.supabaseUrl, env.supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: {
       headers: {
@@ -22,3 +34,4 @@ export const supabaseWithAuth = (accessToken: string): SupabaseClient =>
       },
     },
   });
+};

@@ -1,5 +1,5 @@
 import { loginSchema } from "@crm/shared";
-import { supabaseAdmin, supabaseAnon } from "@/lib/supabase";
+import { getSupabaseAdmin, getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
 
@@ -8,14 +8,14 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const recordFailedLogin = async (emailHash: string) => {
   const now = new Date();
   const key = `login:fail:${emailHash}`;
-  const { data } = await supabaseAdmin
+  const { data } = await getSupabaseAdmin()
     .from("ops.rate_limits")
     .select("*")
     .eq("key", key)
     .maybeSingle();
 
   if (!data) {
-    await supabaseAdmin.from("ops.rate_limits").insert({
+    await getSupabaseAdmin().from("ops.rate_limits").insert({
       key,
       count: 1,
       window_start: now.toISOString(),
@@ -28,7 +28,7 @@ const recordFailedLogin = async (emailHash: string) => {
   const windowStart = new Date(data.window_start);
   const elapsedSeconds = Math.floor((now.getTime() - windowStart.getTime()) / 1000);
   if (elapsedSeconds >= data.window_seconds) {
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("ops.rate_limits")
       .update({
         count: 1,
@@ -40,7 +40,7 @@ const recordFailedLogin = async (emailHash: string) => {
     return 1;
   }
 
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("ops.rate_limits")
     .update({ count: data.count + 1, updated_at: now.toISOString() })
     .eq("key", key);
@@ -48,7 +48,10 @@ const recordFailedLogin = async (emailHash: string) => {
 };
 
 const clearFailedLogin = async (emailHash: string) => {
-  await supabaseAdmin.from("ops.rate_limits").delete().eq("key", `login:fail:${emailHash}`);
+  await getSupabaseAdmin()
+    .from("ops.rate_limits")
+    .delete()
+    .eq("key", `login:fail:${emailHash}`);
 };
 
 export async function POST(request: Request) {
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
     return fail("RATE_LIMITED", "Too many requests", 429, emailLimit);
   }
 
-  const { data, error } = await supabaseAnon.auth.signInWithPassword({
+  const { data, error } = await getSupabaseAnon().auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
   });

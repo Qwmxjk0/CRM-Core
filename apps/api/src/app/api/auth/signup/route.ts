@@ -1,5 +1,5 @@
 import { signupSchema } from "@crm/shared";
-import { supabaseAnon } from "@/lib/supabase";
+import { getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return fail("RATE_LIMITED", "Too many requests", 429, emailLimit);
   }
 
-  const { error } = await supabaseAnon.auth.signUp({
+  const { error } = await getSupabaseAnon().auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
   });

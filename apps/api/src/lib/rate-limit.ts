@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { supabaseAdmin } from "./supabase";
+import { getSupabaseAdmin } from "./supabase";
 
 type RateLimitConfig = {
   key: string;
@@ -28,7 +28,7 @@ export const checkRateLimit = async (
   config: RateLimitConfig
 ): Promise<RateLimitResult> => {
   const now = new Date();
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("ops.rate_limits")
     .select("*")
     .eq("key", config.key)
@@ -39,7 +39,7 @@ export const checkRateLimit = async (
   }
 
   if (!data) {
-    await supabaseAdmin.from("ops.rate_limits").insert({
+    await getSupabaseAdmin().from("ops.rate_limits").insert({
       key: config.key,
       count: 1,
       window_start: now.toISOString(),
@@ -57,7 +57,7 @@ export const checkRateLimit = async (
   const elapsedSeconds = Math.floor((now.getTime() - windowStart.getTime()) / 1000);
 
   if (elapsedSeconds >= data.window_seconds) {
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("ops.rate_limits")
       .update({
         count: 1,
@@ -82,7 +82,7 @@ export const checkRateLimit = async (
     };
   }
 
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("ops.rate_limits")
     .update({ count: data.count + 1, updated_at: now.toISOString() })
     .eq("key", config.key);

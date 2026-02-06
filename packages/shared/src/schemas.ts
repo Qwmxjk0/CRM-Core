@@ -21,7 +21,7 @@ export const contactCreateSchema = z.object({
   email: z.string().email().optional().nullable(),
   tags: z.array(z.string().max(50)).optional().nullable(),
   status: contactStatusSchema.optional().nullable(),
-  external_ref: z.record(z.any()).optional().nullable(),
+  external_ref: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 export const interactionTypeSchema = z.enum([
@@ -34,7 +34,7 @@ export const interactionTypeSchema = z.enum([
 
 export const interactionCreateSchema = z.object({
   type: interactionTypeSchema,
-  payload: z.record(z.any()).optional().nullable(),
+  payload: z.record(z.string(), z.unknown()).optional().nullable(),
   occurred_at: z.string().datetime().optional().nullable(),
 });
 

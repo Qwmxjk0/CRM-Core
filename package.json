@@ -1,0 +1,7 @@
+{
+  "name": "crm-core",
+  "private": true,
+  "scripts": {
+    "migrate": "npx supabase db push --project-ref $SUPABASE_PROJECT_REF"
+  }
+}

@@ -45,6 +45,10 @@ export SUPABASE_ACCESS_TOKEN=your-access-token
 npm run migrate
 ```
 
+## Vercel (Monorepo)
+Set **Root Directory** to repo root and use the default commands.
+`vercel.json` points build/output to `apps/api`.
+
 ## Smoke Test
 ```
 cd apps/api

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { ApiEnvelope } from "@shared/types";
+import type { ApiEnvelope } from "@crm/shared";
 
 export const ok = <T>(data: T, status = 200) =>
   NextResponse.json({ data } satisfies ApiEnvelope<T>, { status });

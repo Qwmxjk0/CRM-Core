@@ -1,4 +1,4 @@
-import { loginSchema } from "@shared/schemas";
+import { loginSchema } from "@crm/shared";
 import { supabaseAdmin, supabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";

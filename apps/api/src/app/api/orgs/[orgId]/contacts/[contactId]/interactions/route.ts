@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { interactionCreateSchema } from "@shared/schemas";
+import { interactionCreateSchema } from "@crm/shared";
 import { requireBearerToken } from "@/lib/auth";
 import { supabaseWithAuth } from "@/lib/supabase";
 import { fail, ok } from "@/lib/responses";

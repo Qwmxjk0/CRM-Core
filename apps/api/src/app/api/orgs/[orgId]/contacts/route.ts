@@ -12,11 +12,11 @@ const orgIdSchema = z.string().uuid();
 
 export async function GET(
   request: Request,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
   const tokenOrResponse = requireBearerToken(request.headers);
   if (tokenOrResponse instanceof Response) return tokenOrResponse;
-  const { orgId } = params;
+  const { orgId } = await params;
 
   const orgIdParsed = orgIdSchema.safeParse(orgId);
   if (!orgIdParsed.success) {
@@ -73,11 +73,11 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> }
 ) {
   const tokenOrResponse = requireBearerToken(request.headers);
   if (tokenOrResponse instanceof Response) return tokenOrResponse;
-  const { orgId } = params;
+  const { orgId } = await params;
 
   const orgIdParsed = orgIdSchema.safeParse(orgId);
   if (!orgIdParsed.success) {

@@ -7,11 +7,11 @@ const idSchema = z.string().uuid();
 
 export async function GET(
   request: Request,
-  { params }: { params: { orgId: string; contactId: string } }
+  { params }: { params: Promise<{ orgId: string; contactId: string }> }
 ) {
   const tokenOrResponse = requireBearerToken(request.headers);
   if (tokenOrResponse instanceof Response) return tokenOrResponse;
-  const { orgId, contactId } = params;
+  const { orgId, contactId } = await params;
 
   if (!idSchema.safeParse(orgId).success || !idSchema.safeParse(contactId).success) {
     return fail("INVALID_ID", "Invalid org or contact id", 400);

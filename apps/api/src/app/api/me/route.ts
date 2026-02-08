@@ -19,21 +19,19 @@ export async function GET(request: Request) {
     .select("org_id, role")
     .eq("user_id", userData.user.id);
 
-  if (membershipError) {
-    return withCors(request, fail("ORG_LOOKUP_FAILED", "Unable to load orgs", 500));
-  }
+  // Do not block authentication when org lookup fails.
+  const safeMemberships = membershipError ? [] : (memberships ?? []);
 
-  const orgIds = (memberships ?? []).map((membership) => membership.org_id);
+  const orgIds = safeMemberships.map((membership) => membership.org_id);
   let orgMap = new Map<string, { id: string; name: string; created_at: string }>();
   if (orgIds.length > 0) {
     const { data: organizations, error: organizationsError } = await admin
       .from("crm.organizations")
       .select("id, name, created_at")
       .in("id", orgIds);
-    if (organizationsError) {
-      return withCors(request, fail("ORG_LOOKUP_FAILED", "Unable to load orgs", 500));
+    if (!organizationsError) {
+      orgMap = new Map((organizations ?? []).map((org) => [org.id, org]));
     }
-    orgMap = new Map((organizations ?? []).map((org) => [org.id, org]));
   }
 
   return withCors(
@@ -43,7 +41,7 @@ export async function GET(request: Request) {
         id: userData.user.id,
         email: userData.user.email,
       },
-      orgs: (memberships ?? []).map((membership) => ({
+      orgs: safeMemberships.map((membership) => ({
         role: membership.role,
         organizations: orgMap.get(membership.org_id) ?? null,
       })),

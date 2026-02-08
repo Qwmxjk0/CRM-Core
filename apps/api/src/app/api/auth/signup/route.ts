@@ -1,5 +1,10 @@
 import { signupSchema } from "@crm/shared";
-import { withCors, handleCorsPreflight, isAllowedOrigin } from "@/lib/cors";
+import {
+  withCors,
+  handleCorsPreflight,
+  isAllowedOrigin,
+  isAllowedRedirectUrl,
+} from "@/lib/cors";
 import { getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
@@ -53,9 +58,27 @@ export async function POST(request: Request) {
 
   const env = getEnv();
   const requestOrigin = request.headers.get("origin");
+  const allowLocalhostRedirect = process.env.NODE_ENV !== "production";
+  const requestedRedirectTo = parsed.data.redirectTo;
+  if (
+    requestedRedirectTo &&
+    !isAllowedRedirectUrl(requestedRedirectTo, allowLocalhostRedirect)
+  ) {
+    return withCors(
+      request,
+      fail("INVALID_REDIRECT", "Invalid redirect target", 400)
+    );
+  }
+  const isLocalhostOrigin =
+    requestOrigin?.startsWith("http://localhost:") ||
+    requestOrigin?.startsWith("http://127.0.0.1:");
+  const canUseOriginAsRedirect =
+    isAllowedOrigin(requestOrigin) &&
+    (process.env.NODE_ENV !== "production" || !isLocalhostOrigin);
   const emailRedirectTo =
+    requestedRedirectTo ??
     env.authEmailRedirectUrl ??
-    (isAllowedOrigin(requestOrigin) ? requestOrigin : undefined);
+    (canUseOriginAsRedirect ? requestOrigin : undefined);
 
   const { error } = await getSupabaseAnon().auth.signUp({
     email: parsed.data.email,

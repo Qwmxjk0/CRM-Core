@@ -6,6 +6,7 @@ export const passwordSchema = z.string().min(8).max(128);
 export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
+  redirectTo: z.string().url().max(2048).optional(),
 });
 
 export const loginSchema = z.object({

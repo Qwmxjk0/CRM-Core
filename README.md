@@ -32,6 +32,10 @@ Required env vars:
 
 Optional env vars:
 - `AUTH_EMAIL_REDIRECT_URL` (where users land after clicking Supabase email verification links)
+- `CORS_ALLOWED_ORIGINS` (comma-separated frontend origins; include every service origin that can call auth APIs)
+
+`POST /api/auth/signup` also accepts optional `redirectTo` in the payload for multi-service confirmation redirect.  
+The URL must be under an origin in `CORS_ALLOWED_ORIGINS`.
 
 ## Supabase
 Use a single Supabase project with schemas:

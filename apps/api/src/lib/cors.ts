@@ -16,6 +16,28 @@ const allowedOrigins = new Set(
 export const isAllowedOrigin = (origin: string | null): origin is string =>
   Boolean(origin && allowedOrigins.has(origin));
 
+const isLocalhost = (hostname: string): boolean =>
+  hostname === "localhost" || hostname === "127.0.0.1";
+
+export const isAllowedRedirectUrl = (
+  redirectTo: string,
+  allowLocalhost: boolean
+): boolean => {
+  try {
+    const url = new URL(redirectTo);
+    const isHttp = url.protocol === "https:" || url.protocol === "http:";
+    if (!isHttp) {
+      return false;
+    }
+    if (!allowLocalhost && isLocalhost(url.hostname)) {
+      return false;
+    }
+    return isAllowedOrigin(url.origin);
+  } catch {
+    return false;
+  }
+};
+
 const buildCorsHeaders = (origin: string | null): Headers => {
   const headers = new Headers({
     Vary: "Origin",

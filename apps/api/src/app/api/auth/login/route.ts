@@ -1,4 +1,5 @@
 import { loginSchema } from "@crm/shared";
+import { withCors, handleCorsPreflight } from "@/lib/cors";
 import { getSupabaseAdmin, getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
@@ -58,7 +59,10 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("INVALID_INPUT", "Invalid login payload", 400, parsed.error);
+    return withCors(
+      request,
+      fail("INVALID_INPUT", "Invalid login payload", 400, parsed.error)
+    );
   }
 
   const ip = getClientIp(request.headers);
@@ -70,7 +74,7 @@ export async function POST(request: Request) {
     windowSeconds: 10 * 60,
   });
   if (!ipLimit.allowed) {
-    return fail("RATE_LIMITED", "Too many requests", 429, ipLimit);
+    return withCors(request, fail("RATE_LIMITED", "Too many requests", 429, ipLimit));
   }
 
   const emailLimit = await checkRateLimit({
@@ -79,7 +83,10 @@ export async function POST(request: Request) {
     windowSeconds: 10 * 60,
   });
   if (!emailLimit.allowed) {
-    return fail("RATE_LIMITED", "Too many requests", 429, emailLimit);
+    return withCors(
+      request,
+      fail("RATE_LIMITED", "Too many requests", 429, emailLimit)
+    );
   }
 
   const { data, error } = await getSupabaseAnon().auth.signInWithPassword({
@@ -93,9 +100,13 @@ export async function POST(request: Request) {
     if (delayMs > 0) {
       await sleep(delayMs);
     }
-    return fail("INVALID_CREDENTIALS", "Invalid credentials", 401);
+    return withCors(request, fail("INVALID_CREDENTIALS", "Invalid credentials", 401));
   }
 
   await clearFailedLogin(emailHash);
-  return ok({ access_token: data.session.access_token });
+  return withCors(request, ok({ access_token: data.session.access_token }));
+}
+
+export async function OPTIONS(request: Request) {
+  return handleCorsPreflight(request);
 }

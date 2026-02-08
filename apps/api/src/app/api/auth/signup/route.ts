@@ -1,4 +1,5 @@
 import { signupSchema } from "@crm/shared";
+import { withCors, handleCorsPreflight } from "@/lib/cors";
 import { getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
@@ -19,7 +20,10 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("INVALID_INPUT", "Invalid signup payload", 400, parsed.error);
+    return withCors(
+      request,
+      fail("INVALID_INPUT", "Invalid signup payload", 400, parsed.error)
+    );
   }
 
   const ip = getClientIp(request.headers);
@@ -31,7 +35,7 @@ export async function POST(request: Request) {
     windowSeconds: 10 * 60,
   });
   if (!ipLimit.allowed) {
-    return fail("RATE_LIMITED", "Too many requests", 429, ipLimit);
+    return withCors(request, fail("RATE_LIMITED", "Too many requests", 429, ipLimit));
   }
 
   const emailLimit = await checkRateLimit({
@@ -40,7 +44,10 @@ export async function POST(request: Request) {
     windowSeconds: 60 * 60,
   });
   if (!emailLimit.allowed) {
-    return fail("RATE_LIMITED", "Too many requests", 429, emailLimit);
+    return withCors(
+      request,
+      fail("RATE_LIMITED", "Too many requests", 429, emailLimit)
+    );
   }
 
   const { error } = await getSupabaseAnon().auth.signUp({
@@ -50,16 +57,21 @@ export async function POST(request: Request) {
 
   if (error) {
     if (isExistingUserError(error)) {
-      return ok({ success: true });
+      return withCors(request, ok({ success: true }));
     }
 
-    return fail(
-      "SIGNUP_FAILED",
-      "Unable to create user",
-      400,
-      { code: error.code, message: error.message }
+    return withCors(
+      request,
+      fail("SIGNUP_FAILED", "Unable to create user", 400, {
+        code: error.code,
+        message: error.message,
+      })
     );
   }
 
-  return ok({ success: true }, 201);
+  return withCors(request, ok({ success: true }, 201));
+}
+
+export async function OPTIONS(request: Request) {
+  return handleCorsPreflight(request);
 }

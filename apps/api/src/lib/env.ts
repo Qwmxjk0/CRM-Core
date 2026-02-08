@@ -3,6 +3,7 @@ type Env = {
   supabaseAnonKey: string;
   supabaseServiceRoleKey: string;
   authEmailRedirectUrl?: string;
+  authCallbackForwardUrl?: string;
 };
 
 export const getEnv = (): Env => {
@@ -23,5 +24,6 @@ export const getEnv = (): Env => {
     supabaseAnonKey: required("SUPABASE_ANON_KEY"),
     supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
     authEmailRedirectUrl: optional("AUTH_EMAIL_REDIRECT_URL"),
+    authCallbackForwardUrl: optional("AUTH_CALLBACK_FORWARD_URL"),
   };
 };

@@ -75,10 +75,14 @@ export async function POST(request: Request) {
   const canUseOriginAsRedirect =
     isAllowedOrigin(requestOrigin) &&
     (process.env.NODE_ENV !== "production" || !isLocalhostOrigin);
+  const originCallbackRedirect =
+    canUseOriginAsRedirect && requestOrigin
+      ? new URL("/auth/callback", requestOrigin).toString()
+      : undefined;
   const emailRedirectTo =
     requestedRedirectTo ??
     env.authEmailRedirectUrl ??
-    (canUseOriginAsRedirect ? requestOrigin : undefined);
+    originCallbackRedirect;
 
   const { error } = await getSupabaseAnon().auth.signUp({
     email: parsed.data.email,

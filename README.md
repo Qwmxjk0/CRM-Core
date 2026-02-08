@@ -31,11 +31,14 @@ Required env vars:
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 Optional env vars:
-- `AUTH_EMAIL_REDIRECT_URL` (where users land after clicking Supabase email verification links)
+- `AUTH_EMAIL_REDIRECT_URL` (default URL used in Supabase signup confirmation emails; use `/auth/callback` path)
+- `AUTH_CALLBACK_FORWARD_URL` (optional URL to auto-forward after `/auth/callback` page is opened)
 - `CORS_ALLOWED_ORIGINS` (comma-separated frontend origins; include every service origin that can call auth APIs)
 
 `POST /api/auth/signup` also accepts optional `redirectTo` in the payload for multi-service confirmation redirect.  
 The URL must be under an origin in `CORS_ALLOWED_ORIGINS`.
+
+`GET /auth/callback` returns a simple HTML confirmation page (no frontend app required).
 
 ## Supabase
 Use a single Supabase project with schemas:

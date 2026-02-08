@@ -3,6 +3,18 @@ import { getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
 
+const isExistingUserError = (error: { code?: string; message?: string }) => {
+  const code = error.code?.toLowerCase() ?? "";
+  const message = error.message?.toLowerCase() ?? "";
+
+  return (
+    code === "user_already_exists" ||
+    code === "email_exists" ||
+    message.includes("already registered") ||
+    message.includes("already exists")
+  );
+};
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
@@ -37,7 +49,16 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return ok({ success: true });
+    if (isExistingUserError(error)) {
+      return ok({ success: true });
+    }
+
+    return fail(
+      "SIGNUP_FAILED",
+      "Unable to create user",
+      400,
+      { code: error.code, message: error.message }
+    );
   }
 
   return ok({ success: true }, 201);

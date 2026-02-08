@@ -180,3 +180,13 @@ for update using (
       and m.role in ('owner', 'admin')
   )
 );
+
+grant usage on schema crm to authenticated;
+grant usage on type crm.org_role, crm.contact_status, crm.interaction_type to authenticated;
+grant select, insert, update on all tables in schema crm to authenticated;
+
+alter default privileges in schema crm
+grant usage on types to authenticated;
+
+alter default privileges in schema crm
+grant select, insert, update on tables to authenticated;

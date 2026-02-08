@@ -13,7 +13,7 @@ const allowedOrigins = new Set(
     .concat(DEFAULT_ALLOWED_ORIGINS)
 );
 
-const isAllowedOrigin = (origin: string | null): origin is string =>
+export const isAllowedOrigin = (origin: string | null): origin is string =>
   Boolean(origin && allowedOrigins.has(origin));
 
 const buildCorsHeaders = (origin: string | null): Headers => {
@@ -45,4 +45,3 @@ export const handleCorsPreflight = (request: Request): Response =>
     status: 204,
     headers: buildCorsHeaders(request.headers.get("origin")),
   });
-

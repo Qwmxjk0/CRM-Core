@@ -30,6 +30,9 @@ Required env vars:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
+Optional env vars:
+- `AUTH_EMAIL_REDIRECT_URL` (where users land after clicking Supabase email verification links)
+
 ## Supabase
 Use a single Supabase project with schemas:
 - `crm` for core tables

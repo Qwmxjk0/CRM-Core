@@ -1,8 +1,9 @@
 import { signupSchema } from "@crm/shared";
-import { withCors, handleCorsPreflight } from "@/lib/cors";
+import { withCors, handleCorsPreflight, isAllowedOrigin } from "@/lib/cors";
 import { getSupabaseAnon } from "@/lib/supabase";
 import { checkRateLimit, getClientIp, hashEmail } from "@/lib/rate-limit";
 import { fail, ok } from "@/lib/responses";
+import { getEnv } from "@/lib/env";
 
 const isExistingUserError = (error: { code?: string; message?: string }) => {
   const code = error.code?.toLowerCase() ?? "";
@@ -50,9 +51,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const env = getEnv();
+  const requestOrigin = request.headers.get("origin");
+  const emailRedirectTo =
+    env.authEmailRedirectUrl ??
+    (isAllowedOrigin(requestOrigin) ? requestOrigin : undefined);
+
   const { error } = await getSupabaseAnon().auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
+    ...(emailRedirectTo ? { options: { emailRedirectTo } } : {}),
   });
 
   if (error) {

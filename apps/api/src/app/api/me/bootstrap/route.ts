@@ -1,5 +1,5 @@
 import { requireBearerToken } from "@/lib/auth";
-import { supabaseWithAuth } from "@/lib/supabase";
+import { getSupabaseAdmin, supabaseWithAuth } from "@/lib/supabase";
 import { fail, ok } from "@/lib/responses";
 
 export async function POST(request: Request) {
@@ -12,18 +12,23 @@ export async function POST(request: Request) {
     return fail("UNAUTHORIZED", "Invalid token", 401);
   }
 
-  const { data: membership } = await supabase
+  const admin = getSupabaseAdmin();
+  const { data: membership, error: membershipError } = await admin
     .from("crm.org_members")
     .select("org_id, role")
     .eq("user_id", userData.user.id)
     .limit(1)
     .maybeSingle();
 
+  if (membershipError) {
+    return fail("BOOTSTRAP_FAILED", "Unable to read membership", 500);
+  }
+
   if (membership) {
     return ok({ org_id: membership.org_id, role: membership.role });
   }
 
-  const { data: org, error: orgError } = await supabase
+  const { data: org, error: orgError } = await admin
     .from("crm.organizations")
     .insert({ name: "My Workspace" })
     .select("id")
@@ -33,7 +38,7 @@ export async function POST(request: Request) {
     return fail("BOOTSTRAP_FAILED", "Unable to create org", 500);
   }
 
-  const { data: member, error: memberError } = await supabase
+  const { data: member, error: memberError } = await admin
     .from("crm.org_members")
     .insert({
       org_id: org.id,

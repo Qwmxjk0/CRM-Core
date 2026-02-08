@@ -1,5 +1,5 @@
 import { requireBearerToken } from "@/lib/auth";
-import { supabaseWithAuth } from "@/lib/supabase";
+import { getSupabaseAdmin, supabaseWithAuth } from "@/lib/supabase";
 import { fail, ok } from "@/lib/responses";
 
 export async function GET(request: Request) {
@@ -7,13 +7,38 @@ export async function GET(request: Request) {
   if (tokenOrResponse instanceof Response) return tokenOrResponse;
 
   const supabase = supabaseWithAuth(tokenOrResponse);
-  const { data: orgs, error } = await supabase
-    .from("crm.org_members")
-    .select("role, organizations:org_id ( id, name, created_at )");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    return fail("UNAUTHORIZED", "Invalid token", 401);
+  }
 
-  if (error) {
+  const admin = getSupabaseAdmin();
+  const { data: memberships, error: membershipError } = await admin
+    .from("crm.org_members")
+    .select("org_id, role")
+    .eq("user_id", userData.user.id);
+
+  if (membershipError) {
     return fail("ORG_LOOKUP_FAILED", "Unable to load orgs", 500);
   }
 
-  return ok({ orgs: orgs ?? [] });
+  const orgIds = (memberships ?? []).map((membership) => membership.org_id);
+  let orgMap = new Map<string, { id: string; name: string; created_at: string }>();
+  if (orgIds.length > 0) {
+    const { data: organizations, error: organizationsError } = await admin
+      .from("crm.organizations")
+      .select("id, name, created_at")
+      .in("id", orgIds);
+    if (organizationsError) {
+      return fail("ORG_LOOKUP_FAILED", "Unable to load orgs", 500);
+    }
+    orgMap = new Map((organizations ?? []).map((org) => [org.id, org]));
+  }
+
+  return ok({
+    orgs: (memberships ?? []).map((membership) => ({
+      role: membership.role,
+      organizations: orgMap.get(membership.org_id) ?? null,
+    })),
+  });
 }

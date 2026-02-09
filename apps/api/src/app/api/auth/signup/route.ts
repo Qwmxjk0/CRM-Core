@@ -22,6 +22,13 @@ const isExistingUserError = (error: { code?: string; message?: string }) => {
   );
 };
 
+const isExistingUserData = (data: {
+  user?: { identities?: unknown[] | null } | null;
+}) => {
+  const identities = data.user?.identities;
+  return Array.isArray(identities) && identities.length === 0;
+};
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
@@ -84,7 +91,7 @@ export async function POST(request: Request) {
     env.authEmailRedirectUrl ??
     originCallbackRedirect;
 
-  const { error } = await getSupabaseAnon().auth.signUp({
+  const { data, error } = await getSupabaseAnon().auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     ...(emailRedirectTo ? { options: { emailRedirectTo } } : {}),
@@ -92,7 +99,13 @@ export async function POST(request: Request) {
 
   if (error) {
     if (isExistingUserError(error)) {
-      return withCors(request, ok({ success: true }));
+      return withCors(
+        request,
+        fail("EMAIL_ALREADY_EXISTS", "Email is already registered", 409, {
+          code: error.code,
+          message: error.message,
+        })
+      );
     }
 
     return withCors(
@@ -101,6 +114,13 @@ export async function POST(request: Request) {
         code: error.code,
         message: error.message,
       })
+    );
+  }
+
+  if (isExistingUserData(data)) {
+    return withCors(
+      request,
+      fail("EMAIL_ALREADY_EXISTS", "Email is already registered", 409)
     );
   }
 
